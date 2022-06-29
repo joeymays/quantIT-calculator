@@ -11,7 +11,8 @@ ui <- fluidPage(
   sidebarLayout(
     sidebarPanel(
       
-      textInput("pasteinput", label = "paste here", placeholder = "paste spreadsheet here"),
+      p("Copy and Paste 96-well format spreadsheet from plate reader:"),
+      textInput("pasteinput", label = "Paste Spreadsheet", placeholder = "paste spreadsheet here"),
       
       fluidRow(
         column(6,
@@ -22,9 +23,12 @@ ui <- fluidPage(
                ),
       ),
       numericInput("sampleAmount", "Sample Amount (uL)", value = 2, width = "45%"),
+      downloadButton("transformedTableDownload", label = "Download As Table"),
+      downloadButton("transformedTableListDownload", label = "Download As List"),
     ),
     
     mainPanel(
+      p("Input Table:"),
       tableOutput("tablePreview"),
       
       fluidRow(
@@ -33,7 +37,9 @@ ui <- fluidPage(
       column(4,
       textOutput("regressionParams")
       ),
-      )
+      ),
+      p("Output Table:"),
+      tableOutput("transformedTable")
     )
   )
 )
@@ -57,7 +63,6 @@ server <- function(input, output, session) {
     })
     
     output$tablePreview <- renderTable({
-        req(input$pasteinput)
       pasteInput()}, rownames = T, colnames = T, digits = 1)
     
     regressionDF <- reactive({
@@ -67,9 +72,7 @@ server <- function(input, output, session) {
     })
     
     regressionParams <- reactive({
-      print("RUN1")
       regression.results <- getRegression(x = regressionDF()$dna.amount, y = regressionDF()$standard.signal)
-      print(str(regression.results))
       return(regression.results)
     })
     
@@ -85,11 +88,37 @@ server <- function(input, output, session) {
         theme_bw()
     })
     
+    transformedTable <- reactive({
+      temp.table <- pasteInput() - regressionParams()$yint
+      temp.table <- temp.table/regressionParams()$slope
+      temp.table <- temp.table/input$sampleAmount
+    })
     
-    # output$scatterplot <- renderPlot({
-    #   ggplot()
-    # })
-    # 
+    output$transformedTable <- renderTable({transformedTable()}, rownames = T, colnames = T, digits = 2)
+    
+    output$transformedTableDownload <- downloadHandler(
+      filename = function() {
+        paste0("quantit-normalized_",as.character(Sys.Date()),".txt")
+      },
+      content = function(file) {
+        write.table(transformedTable(), file, col.names =NA, row.names = T, quote = F, sep = "\t")
+      }
+    )
+    
+    transformedTableList <- reactive({
+      data.frame(x = as.numeric(transformedTable()))
+    })
+    
+    output$transformedTableListDownload <- downloadHandler(
+      filename = function() {
+        paste0("quantit-normalized-list_",as.character(Sys.Date()),".txt")
+      },
+      content = function(file) {
+        write.table(transformedTableList(), file, quote = F, row.names = F, col.names = F, sep = '\t')
+        
+      }
+    )
+    
 }
 
 shinyApp(ui = ui, server = server)
