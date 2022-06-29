@@ -6,6 +6,8 @@ source("quantit-backend.R")
 
 ui <- fluidPage(
   
+  HTML(r"(<p style="text-align:center;">Joey Mays - Updated 2022-06-29</p>)"),
+  
   titlePanel("QuantIT Calculator"),
   
   sidebarLayout(
