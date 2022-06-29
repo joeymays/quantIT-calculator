@@ -30,7 +30,7 @@ ui <- fluidPage(
     ),
     
     mainPanel(
-      p("Input Table:"),
+      p("Input Table (Fluoresence):"),
       tableOutput("tablePreview"),
       
       fluidRow(
@@ -40,7 +40,7 @@ ui <- fluidPage(
       textOutput("regressionParams")
       ),
       ),
-      p("Output Table:"),
+      p("Output Table (ng/uL):"),
       tableOutput("transformedTable")
     )
   )
@@ -94,6 +94,8 @@ server <- function(input, output, session) {
       temp.table <- pasteInput() - regressionParams()$yint
       temp.table <- temp.table/regressionParams()$slope
       temp.table <- temp.table/input$sampleAmount
+      temp.table[,as.numeric(input$standardColumn)] <- temp.table[,as.numeric(input$standardColumn)] * input$sampleAmount / input$standardAmount
+      return(temp.table)
     })
     
     output$transformedTable <- renderTable({transformedTable()}, rownames = T, colnames = T, digits = 2)
