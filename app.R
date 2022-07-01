@@ -11,7 +11,7 @@ ui <- fluidPage(
   titlePanel("QuantIT Calculator"),
   
   sidebarLayout(
-    sidebarPanel(
+    sidebarPanel(width = 2,
       
       p("Copy and Paste 96-well format spreadsheet from plate reader:"),
       textInput("pasteinput", label = "Paste Spreadsheet", placeholder = "paste spreadsheet here"),
@@ -30,20 +30,26 @@ ui <- fluidPage(
     ),
     
     mainPanel(
+    fluidRow(
+        column(6,
       p("Input Table (Fluoresence):"),
             DTOutput("tablePreview"),
-      
-      fluidRow(
-        column(8,
-      plotOutput("regressionPlot"),),
-      column(4,
-      textOutput("regressionParams")
+        ),
+      column(6, 
+      plotOutput("regressionPlot"),
       ),
-      ),
+    ),
+      textOutput("regressionParams"),
+    hr(),
       p("Output Table (ng/uL):"),
-      tableOutput("transformedTable")
+    fluidRow(
+        column(8,
+      DTOutput("transformedTable")
+        ),
+      column(4),
     )
   )
+)
 )
 
 server <- function(input, output, session) {
@@ -66,7 +72,7 @@ server <- function(input, output, session) {
     
     output$tablePreview <- renderDT(server = F, {
         pasteInput()
-    }, options = list(dom = 't', ordering=F), selection = list(target = 'column', selected = as.numeric(input$standardColumn), mode = "single"))
+    }, options = list(dom = 't', ordering=F, autoWidth = T, columnDefs = list(list(width = "50px", targets = c(1:12)))), selection = list(target = 'column', selected = as.numeric(input$standardColumn), mode = "single"))
     
     observeEvent(input$tablePreview_columns_selected,{
         updateNumericInput(session, "standardColumn", value = input$tablePreview_columns_selected)
@@ -105,7 +111,9 @@ server <- function(input, output, session) {
       return(temp.table)
     })
     
-    output$transformedTable <- renderTable({transformedTable()}, rownames = T, colnames = T, digits = 2)
+    output$transformedTable <- renderDT(server = F, {
+        round(as.matrix(transformedTable()), 2)
+    }, options = list(dom = 't', ordering=F, autoWidth = T, columnDefs = list(list(width = "75px", targets = c(1:12)))), selection = "none")
     
     output$transformedTableDownload <- downloadHandler(
       filename = function() {
