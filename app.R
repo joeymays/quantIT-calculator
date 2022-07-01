@@ -1,6 +1,6 @@
 library(shiny)
-#library(shinyMatrix)
 library(ggplot2)
+library(DT)
 
 source("quantit-backend.R")
 
@@ -31,7 +31,7 @@ ui <- fluidPage(
     
     mainPanel(
       p("Input Table (Fluoresence):"),
-      tableOutput("tablePreview"),
+            DTOutput("tablePreview"),
       
       fluidRow(
         column(8,
@@ -64,8 +64,15 @@ server <- function(input, output, session) {
         return(paste.neat)
     })
     
-    output$tablePreview <- renderTable({
-      pasteInput()}, rownames = T, colnames = T, digits = 1)
+    output$tablePreview <- renderDT(server = F, {
+        pasteInput()
+    }, options = list(dom = 't', ordering=F), selection = list(target = 'column', selected = as.numeric(input$standardColumn), mode = "single"))
+    
+    observeEvent(input$tablePreview_columns_selected,{
+        updateNumericInput(session, "standardColumn", value = input$tablePreview_columns_selected)
+    })
+    
+    
     
     regressionDF <- reactive({
       req(input$pasteinput)
