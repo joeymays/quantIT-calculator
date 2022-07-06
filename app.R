@@ -1,10 +1,11 @@
 library(shiny)
 library(ggplot2)
 library(DT)
+library(shinythemes)
 
 source("quantit-backend.R")
 
-ui <- fluidPage(
+ui <- fluidPage(theme = shinytheme("yeti"),
   
   HTML(r"(<p style="text-align:center;">Joey Mays - Updated 2022-06-29</p>)"),
   
@@ -25,8 +26,8 @@ ui <- fluidPage(
                ),
       ),
       numericInput("sampleAmount", "Sample Amount (uL)", value = 2, width = "45%"),
-      downloadButton("transformedTableDownload", label = "Download As Table"),
-      downloadButton("transformedTableListDownload", label = "Download As List"),
+      downloadButton("transformedTableDownload", label = "Download As Table", class = "btn-primary"),
+      downloadButton("transformedTableListDownload", label = "Download As List", class = "btn-success"),
     ),
     
     mainPanel(
@@ -36,17 +37,18 @@ ui <- fluidPage(
             DTOutput("tablePreview"),
         ),
       column(6, 
-      plotOutput("regressionPlot"),
+      plotOutput("regressionPlot", width = "70%"),
+      textOutput("regressionParams"),
       ),
     ),
-      textOutput("regressionParams"),
+      
     hr(),
       p("Output Table (ng/uL):"),
     fluidRow(
-        column(8,
+        column(6,
       DTOutput("transformedTable")
         ),
-      column(4),
+      column(6),
     )
   )
 )
@@ -93,14 +95,16 @@ server <- function(input, output, session) {
     
     output$regressionParams <- renderText(paste0("slope = ", round(regressionParams()$slope, 1), "; intercept = ", 
                                                  round(regressionParams()$yint, 1), "; r.squared = ", 
-                                                 round(regressionParams()$rsq), 2))
+                                                 round(as.numeric(regressionParams()$rsq)), 2))
     
     
     output$regressionPlot <- renderPlot({
       ggplot(data = regressionDF(), aes(x = dna.amount, y = standard.signal)) +
-        geom_point(size = 2) +
-        geom_abline(slope = regressionParams()$slope, intercept = regressionParams()$yint) +
-        theme_bw()
+        geom_point(size = 4, alpha = 0.4) +
+        geom_abline(slope = regressionParams()$slope, intercept = regressionParams()$yint, size = 1, linetype = "dashed") +
+        theme_bw() +
+        theme(axis.text = element_text(size = 15), axis.title = element_text(size = 15)) +
+        labs(x = "DNA Amount (ng)", y = "Fluorescence (units)")
     })
     
     transformedTable <- reactive({
@@ -113,7 +117,7 @@ server <- function(input, output, session) {
     
     output$transformedTable <- renderDT(server = F, {
         round(as.matrix(transformedTable()), 2)
-    }, options = list(dom = 't', ordering=F, autoWidth = T, columnDefs = list(list(width = "75px", targets = c(1:12)))), selection = "none")
+    }, options = list(dom = 't', ordering=F, autoWidth = T, columnDefs = list(list(width = "50px", targets = c(1:12)))), selection = "none")
     
     output$transformedTableDownload <- downloadHandler(
       filename = function() {
