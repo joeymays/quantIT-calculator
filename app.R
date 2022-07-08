@@ -96,7 +96,7 @@ server <- function(input, output, session) {
     
     output$regressionParams <- renderText(paste0("slope = ", round(regressionParams()$slope, 1), "\nintercept = ", 
                                                  round(regressionParams()$yint, 1), "\nr.squared = ", 
-                                                 round(as.numeric(regressionParams()$rsq)), 2))
+                                                 round(as.numeric(regressionParams()$rsq), 2)))
     
     
     output$regressionPlot <- renderPlot({
