@@ -12,7 +12,7 @@ ui <- fluidPage(theme = shinytheme("yeti"),
   titlePanel("QuantIT Calculator"),
   
   sidebarLayout(
-    sidebarPanel(width = 2,
+    sidebarPanel(width = 4,
       
       p("Copy and Paste 96-well format spreadsheet from plate reader:"),
       textInput("pasteinput", label = "Paste Spreadsheet", placeholder = "paste spreadsheet here"),
@@ -31,17 +31,17 @@ ui <- fluidPage(theme = shinytheme("yeti"),
     ),
     
     mainPanel(
+        p("Input Table (Fluoresence):"),
+        DTOutput("tablePreview"),
+        hr(),
     fluidRow(
         column(6,
-      p("Input Table (Fluoresence):"),
-            DTOutput("tablePreview"),
+      plotOutput("regressionPlot", height = "200px"),
         ),
-      column(6, 
-      plotOutput("regressionPlot", width = "70%"),
-      textOutput("regressionParams"),
+      column(6,
+             verbatimTextOutput("regressionParams"),
       ),
     ),
-      
     hr(),
       p("Output Table (ng/uL):"),
     fluidRow(
@@ -49,7 +49,8 @@ ui <- fluidPage(theme = shinytheme("yeti"),
       DTOutput("transformedTable")
         ),
       column(6),
-    )
+    ),
+    p(),p(),
   )
 )
 )
@@ -93,8 +94,8 @@ server <- function(input, output, session) {
       return(regression.results)
     })
     
-    output$regressionParams <- renderText(paste0("slope = ", round(regressionParams()$slope, 1), "; intercept = ", 
-                                                 round(regressionParams()$yint, 1), "; r.squared = ", 
+    output$regressionParams <- renderText(paste0("slope = ", round(regressionParams()$slope, 1), "\nintercept = ", 
+                                                 round(regressionParams()$yint, 1), "\nr.squared = ", 
                                                  round(as.numeric(regressionParams()$rsq)), 2))
     
     
